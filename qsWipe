@@ -16,7 +16,7 @@ else
             echo "Please run this command as root or with sudo."
             exit 0
         fi
-        read -p "Type uppercase \"yes\" if you wan't to format $1 : " response;
+        read -p "Type uppercase \"yes\" if you wan't to wipe $1 : " response;
         if [ "$response" == "YES" ]
         then
             echo -en "\nGenerating the temporary crypted system : ";
