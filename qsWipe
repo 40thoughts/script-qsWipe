@@ -1,0 +1,55 @@
+#!/bin/bash
+
+PKG_NAME=qsWipe
+keyfile=/tmp/keyfile
+cryptName=tmp_crypt
+
+if [ -z "$1" ];
+then
+    echo "Please check that your device is correctly set using : $PKG_NAME /dev/sdX";
+    exit 0
+else
+    if [ -b "$1" ]
+    then
+        if [[ $(id -u) -ne 0 ]]
+        then
+            echo "Please run this command as root or with sudo."
+            exit 0
+        fi
+        read -p "Type uppercase \"yes\" if you wan't to format $1 : " response;
+        if [ "$response" == "YES" ]
+        then
+            echo -en "\nGenerating the temporary crypted system : ";
+            dd if=/dev/urandom of=$1 bs=512 count=20480 > /dev/null 2>&1;
+            dd if=/dev/urandom of=$keyfile bs=1024 count=4 > /dev/null 2>&1;
+            sync;
+            sleep 1;
+            cryptsetup luksFormat -q $1 $keyfile;
+            cryptsetup luksOpen $1 $cryptName --key-file=$keyfile;
+            echo "OK";
+            echo -n "Filling the device : ";
+            dd if=/dev/zero of=/dev/mapper/$cryptName bs=1M  > /dev/null 2>&1 || true;
+            sync;
+            sleep 1;
+            echo "OK";
+            echo -n "Closing the device : ";
+            cryptsetup luksClose $cryptName;
+            echo "OK";
+            sleep 1;
+            echo -n "Destroying the key : ";
+            dd if=/dev/urandom of=$1 bs=512 count=2048 > /dev/null 2>&1;
+            rm $keyfile;
+            echo "OK";
+            echo -e "\nYou can now use $1 however you like.\n\nThanks for having used this app !";
+        else
+            for n in {1..15}
+            do
+                echo "YOU DIDN'T SAY THE MAGIC WORD!";
+            done
+        fi
+    else
+        echo "It doesn't seem that the device is correctly detected !!!";
+        echo "Please check the path of your device.";
+    fi
+fi
+exit 0
